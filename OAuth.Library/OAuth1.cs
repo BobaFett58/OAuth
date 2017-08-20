@@ -1,46 +1,37 @@
-﻿using System.Collections.Generic;
-using System.Net;
+﻿using System.Net;
 
 namespace OAuth.Library
 {
-
-    using Newtonsoft.Json;
     using RestSharp;
     using System;
 
+
+    /// <summary>
+    /// Demonstrates how to do OAuth1 authentication via RestSharp with query parameters (for a Wordpress site using Woo Commerce).
+    /// </summary>
     public class OAuth1
     {
-        private RootObject RootObject { get; set; }
-        private string Content { get; set; }
-        public int GetOrderCount() => RootObject?.orders?.Count ?? 0;
-        public List<Order> GetOrders() => RootObject?.orders;
-        public Order GetOrder(int orderNo)
-            => RootObject.orders.Count < orderNo ? null : RootObject?.orders[orderNo - 1];
-        public string GetContent() => Content;
-
-        public bool AuthenticateWithOAuth(string baseUrl, string consumerKey, string consumerSecret, string signatureMethod, string oauthVersion,
+        public bool AuthenticateWithOAuth(string baseUrl, string consumerKey, string consumerSecret,
             string status, string filter)
         {
 
             const string accessToken = @"";
             const string accessTokenSecret = @"";
 
-            RestClient restClient = new RestClient(baseUrl);
-            OAuthBase oAuth = new OAuthBase();
-            string nonce = oAuth.GenerateNonce();
-            string timeStamp = oAuth.GenerateTimeStamp();
-            string normalizedUrl;
-            string normalizedRequestParameters;
+            var restClient = new RestClient(baseUrl);
+            var oAuth = new OAuthBase();
+            var nonce = oAuth.GenerateNonce();
+            var timeStamp = OAuthBase.GenerateTimeStamp();
+
             string sig = oAuth.GenerateSignature(new Uri(baseUrl), consumerKey, consumerSecret, accessToken, accessTokenSecret, "GET",
-                timeStamp, nonce, filter, status, out normalizedUrl, out normalizedRequestParameters);
+                timeStamp, nonce, filter, status, normalizedUrl: out var _, normalizedRequestParameters: out var _);
 
             var request = new RestRequest(Method.GET);
 
             request.AddParameter("oauth_consumer_key", consumerKey);
-            request.AddParameter("oauth_signature_method", signatureMethod);
-            request.AddParameter("oauth_timestamp", timeStamp);
+            request.AddParameter("oauth_signature_method", "HMAC-SHA1");
             request.AddParameter("oauth_nonce", nonce);
-            request.AddParameter("oauth_version", oauthVersion);
+            request.AddParameter("oauth_version", "1.0");
             request.AddParameter("oauth_signature", sig);
 
             if (!string.IsNullOrEmpty(status))
@@ -51,12 +42,13 @@ namespace OAuth.Library
 
             var response = restClient.Execute(request);
 
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                var content = response.Content;
+                return true;
+            }
 
-            if (response.StatusCode != HttpStatusCode.OK) return false;
-
-            Content = response.Content;
-            RootObject = JsonConvert.DeserializeObject<RootObject>(response.Content);
-            return true;
+            return false;
         }
     }
 }
