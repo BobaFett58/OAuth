@@ -11,26 +11,31 @@ namespace OAuth.Library
     /// </summary>
     public class OAuth1
     {
-        public bool AuthenticateWithOAuth(string baseUrl, string consumerKey, string consumerSecret,
-            string status, string filter)
+        public bool AuthenticateWithOAuth(string baseUrl, string consumerKey, string consumerSecret, string accessToken, string accessTokenSecret,
+            string verifier, string status = "", string filter = "")
         {
-
-            const string accessToken = @"";
-            const string accessTokenSecret = @"";
-
             var restClient = new RestClient(baseUrl);
             var oAuth = new OAuthBase();
             var nonce = oAuth.GenerateNonce();
             var timeStamp = OAuthBase.GenerateTimeStamp();
 
             string sig = oAuth.GenerateSignature(new Uri(baseUrl), consumerKey, consumerSecret, accessToken, accessTokenSecret, "GET",
-                timeStamp, nonce, filter, status, normalizedUrl: out var _, normalizedRequestParameters: out var _);
+                timeStamp, nonce, verifier, filter, status, normalizedUrl: out var _, normalizedRequestParameters: out var _);
 
             var request = new RestRequest(Method.GET);
 
             request.AddParameter("oauth_consumer_key", consumerKey);
+
+            if (!string.IsNullOrEmpty(verifier))
+                request.AddParameter("oauth_verifier", verifier);
+
             request.AddParameter("oauth_signature_method", "HMAC-SHA1");
+
+            if (!string.IsNullOrEmpty(accessToken))
+                request.AddParameter("oauth_token", accessToken);
+
             request.AddParameter("oauth_nonce", nonce);
+            request.AddParameter("oauth_timestamp", timeStamp);
             request.AddParameter("oauth_version", "1.0");
             request.AddParameter("oauth_signature", sig);
 
