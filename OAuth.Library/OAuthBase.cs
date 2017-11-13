@@ -197,7 +197,7 @@ namespace OAuth.Library
         private string GenerateSignatureBase(
             Uri url, string consumerKey, string token,
             string httpMethod, string timeStamp, string nonce, string signatureType,
-            string verifier, string filterCreatedAtMin, string status,
+            string verifier, string title, string filterCreatedAtMin, string status,
             out string normalizedUrl, out string normalizedRequestParameters)
         {
             if (token == null)
@@ -225,6 +225,9 @@ namespace OAuth.Library
             parameters.Add(new QueryParameter(OAuthTimestampKey, timeStamp));
             parameters.Add(new QueryParameter(OAuthSignatureMethodKey, signatureType));
             parameters.Add(new QueryParameter(OAuthConsumerKeyKey, consumerKey));
+
+            if (!string.IsNullOrEmpty(title))
+                parameters.Add(new QueryParameter(nameof(title), title));
 
             if (!string.IsNullOrEmpty(verifier))
                 parameters.Add(new QueryParameter(OAuthVerifier, verifier));
@@ -291,7 +294,7 @@ namespace OAuth.Library
         {
             return GenerateSignature(
                 url, consumerKey, consumerSecret, token, tokenSecret,
-                httpMethod, timeStamp, nonce, SignatureTypes.Hmacsha1, null, filterCreatedAtMin, status,
+                httpMethod, timeStamp, nonce, SignatureTypes.Hmacsha1, null, null, filterCreatedAtMin, status,
                 out normalizedUrl, out normalizedRequestParameters);
         }
 
@@ -300,12 +303,12 @@ namespace OAuth.Library
         public string GenerateSignature(
             Uri url, string consumerKey, string consumerSecret, string token, string tokenSecret,
             string httpMethod, string timeStamp, string nonce,
-            string verifier, string filter, string status,
+            string verifier, string title, string filter, string status,
             out string normalizedUrl, out string normalizedRequestParameters)
         {
             return GenerateSignature(
                 url, consumerKey, consumerSecret, token, tokenSecret,
-                httpMethod, timeStamp, nonce, SignatureTypes.Hmacsha1, verifier, filter, status,
+                httpMethod, timeStamp, nonce, SignatureTypes.Hmacsha1, verifier, title, filter, status,
                 out normalizedUrl, out normalizedRequestParameters);
         }
 
@@ -331,7 +334,7 @@ namespace OAuth.Library
         public string GenerateSignature(
             Uri url, string consumerKey, string consumerSecret, string token, string tokenSecret,
             string httpMethod, string timeStamp, string nonce, SignatureTypes signatureType,
-            string verifier, string filter, string status,
+            string verifier, string title, string filter, string status,
             out string normalizedUrl, out string normalizedRequestParameters)
         {
             normalizedUrl = null;
@@ -346,7 +349,7 @@ namespace OAuth.Library
                     string signatureBase =
                         GenerateSignatureBase(
                             url, consumerKey, token,
-                            httpMethod, timeStamp, nonce, Hmacsha1SignatureType, verifier, filter, status,
+                            httpMethod, timeStamp, nonce, Hmacsha1SignatureType, verifier, title, filter, status,
                             out normalizedUrl, out normalizedRequestParameters);
 
                     HMACSHA1 hmacsha1 = new HMACSHA1();
